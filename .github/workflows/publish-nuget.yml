@@ -24,6 +24,7 @@ jobs:
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Publishing version: ${VERSION}"
+          cp ./README.md ./src/LocaGuest.Emailing/README.md
           dotnet restore ./LocaGuest.Emailing.sln
           dotnet pack ./src/LocaGuest.Emailing/LocaGuest.Emailing.csproj -c Release -o ./artifacts /p:PackageVersion="${VERSION}" /p:Version="${VERSION}"
 
