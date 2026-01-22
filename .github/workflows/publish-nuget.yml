@@ -1,0 +1,44 @@
+name: Publish NuGet (tag)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Publishing version: ${VERSION}"
+          dotnet restore ./LocaGuest.Emailing.sln
+          dotnet pack ./src/LocaGuest.Emailing/LocaGuest.Emailing.csproj -c Release -o ./artifacts /p:PackageVersion="${VERSION}" /p:Version="${VERSION}"
+
+      - name: Push to NuGet
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NUGET_API_KEY}" ]; then
+            echo "NUGET_API_KEY secret is not set"
+            exit 1
+          fi
+
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key "${NUGET_API_KEY}" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate
