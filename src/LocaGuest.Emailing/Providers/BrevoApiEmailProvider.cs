@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,6 +10,8 @@ using LocaGuest.Emailing.Options;
 using LocaGuest.Emailing.Providers.Models;
 using LocaGuest.Emailing.Internal;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace LocaGuest.Emailing.Providers;
 
@@ -16,6 +19,7 @@ internal sealed class BrevoApiEmailProvider : IEmailProvider
 {
     private readonly HttpClient _http;
     private readonly BrevoOptions _opt;
+    private readonly ILogger<BrevoApiEmailProvider> _logger;
 
     private sealed class BrevoSendResponse
     {
@@ -23,16 +27,37 @@ internal sealed class BrevoApiEmailProvider : IEmailProvider
         public string[]? MessageIds { get; set; }
     }
 
-    public BrevoApiEmailProvider(HttpClient http, BrevoOptions opt)
+    public BrevoApiEmailProvider(HttpClient http, BrevoOptions opt, ILogger<BrevoApiEmailProvider> logger)
     {
         _http = http;
         _opt = opt;
+        _logger = logger;
     }
 
     public async Task<SendResult> SendAsync(SendRequest request, CancellationToken ct)
     {
-        if (!_opt.EnableSending)
-            return SendResult.Ok("disabled");
+        var sw = Stopwatch.StartNew();
+        SendResult? finalResult = null;
+        string? failureReason = null;
+        int? statusCode = null;
+
+        _logger.LogInformation(
+            "EmailProvider.BrevoApi.Send ENTER to={ToEmail} templateId={TemplateId} hasHtml={HasHtml} hasText={HasText} attachments={AttachmentsCount} tags={TagsCount} sandbox={Sandbox}",
+            request.ToEmail,
+            request.TemplateId,
+            !string.IsNullOrWhiteSpace(request.HtmlContent),
+            !string.IsNullOrWhiteSpace(request.TextContent),
+            request.Attachments.Count,
+            request.Tags.Count,
+            _opt.Sandbox);
+
+        try
+        {
+            if (!_opt.EnableSending)
+            {
+                finalResult = SendResult.Ok("disabled");
+                return finalResult;
+            }
 
         // Brevo rejects "tags" if blank -> only include when non-empty
         var tags = request.Tags.Count > 0 ? request.Tags : null;
@@ -75,14 +100,16 @@ internal sealed class BrevoApiEmailProvider : IEmailProvider
 
         req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        if (string.IsNullOrWhiteSpace(_opt.ApiKey))
-            return SendResult.Fail("Brevo ApiKey is missing", retryable: false);
+            if (string.IsNullOrWhiteSpace(_opt.ApiKey))
+            {
+                finalResult = SendResult.Fail("Brevo ApiKey is missing", retryable: false);
+                return finalResult;
+            }
 
         req.Headers.TryAddWithoutValidation("api-key", _opt.ApiKey);
 
-        try
-        {
             using var res = await _http.SendAsync(req, ct);
+            statusCode = (int)res.StatusCode;
             var body = await res.Content.ReadAsStringAsync(ct);
 
             if (res.IsSuccessStatusCode)
@@ -93,7 +120,8 @@ internal sealed class BrevoApiEmailProvider : IEmailProvider
                 });
 
                 var id = dto?.MessageId ?? (dto?.MessageIds?.Length > 0 ? dto?.MessageIds?[0] : null);
-                return SendResult.Ok(id);
+                finalResult = SendResult.Ok(id);
+                return finalResult;
             }
 
             // Retryable classification (best practice)
@@ -108,15 +136,35 @@ internal sealed class BrevoApiEmailProvider : IEmailProvider
             if ((int)res.StatusCode >= 400 && (int)res.StatusCode < 500 && res.StatusCode != HttpStatusCode.TooManyRequests)
                 retryable = false;
 
-            return SendResult.Fail($"Brevo API error {(int)res.StatusCode}: {body}", retryable);
+            // Do not log raw body here (can contain payload details). Keep it in DB error only.
+            failureReason = $"Brevo API error {(int)res.StatusCode}";
+            finalResult = SendResult.Fail($"Brevo API error {(int)res.StatusCode}: {body}", retryable);
+            return finalResult;
         }
         catch (TaskCanceledException ex)
         {
-            return SendResult.Fail($"Brevo API timeout: {ex.Message}", retryable: true);
+            failureReason = "Brevo API timeout";
+            finalResult = SendResult.Fail($"Brevo API timeout: {ex.Message}", retryable: true);
+            return finalResult;
         }
         catch (Exception ex)
         {
-            return SendResult.Fail($"Brevo API exception: {ex.Message}", retryable: true);
+            failureReason = "Brevo API exception";
+            finalResult = SendResult.Fail($"Brevo API exception: {ex.Message}", retryable: true);
+            return finalResult;
+        }
+        finally
+        {
+            sw.Stop();
+            _logger.LogInformation(
+                "EmailProvider.BrevoApi.Send EXIT to={ToEmail} success={Success} providerMessageId={ProviderMessageId} statusCode={StatusCode} retryable={Retryable} reason={Reason} elapsedMs={ElapsedMs}",
+                request.ToEmail,
+                finalResult?.Success,
+                finalResult?.ProviderMessageId,
+                statusCode,
+                finalResult?.Retryable,
+                failureReason,
+                sw.ElapsedMilliseconds);
         }
     }
 }

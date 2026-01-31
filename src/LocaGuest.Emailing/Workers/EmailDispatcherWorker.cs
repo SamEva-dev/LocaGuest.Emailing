@@ -55,9 +55,16 @@ public sealed class EmailDispatcherWorker : BackgroundService
 
     private async Task DispatchBatch(CancellationToken ct)
     {
+        var startedAt = DateTime.UtcNow;
+        int? batchCount = null;
+        string? providerMode = null;
+
+        _logger.LogInformation("EmailDispatcher.DispatchBatch ENTER");
+
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<EmailingDbContext>();
         var brevo = scope.ServiceProvider.GetRequiredService<IOptions<BrevoOptions>>().Value;
+        providerMode = brevo.Mode;
 
         var now = DateTime.UtcNow;
         var lockUntil = now.AddMinutes(_workerOptions.Value.LockMinutes);
@@ -71,6 +78,8 @@ public sealed class EmailDispatcherWorker : BackgroundService
             .OrderBy(x => x.CreatedAtUtc)
             .Take(_workerOptions.Value.BatchSize)
             .ToListAsync(ct);
+
+        batchCount = batch.Count;
 
         if (batch.Count == 0) return;
 
@@ -87,6 +96,20 @@ public sealed class EmailDispatcherWorker : BackgroundService
 
         foreach (var msg in batch)
         {
+            var msgStartedAt = DateTime.UtcNow;
+            bool? success = null;
+            bool? retryable = null;
+            string? providerMessageId = null;
+            string? error = null;
+
+            _logger.LogInformation(
+                "EmailDispatcher.ProcessMessage ENTER emailId={EmailId} to={ToEmail} templateId={TemplateId} attempt={Attempt} attachments={AttachmentsCount}",
+                msg.Id,
+                msg.ToEmail,
+                msg.TemplateId,
+                msg.AttemptCount,
+                msg.Attachments.Count);
+
             try
             {
                 var contextTags = TagCatalog.ParseCsv(msg.ContextTagsCsv);
@@ -118,6 +141,11 @@ public sealed class EmailDispatcherWorker : BackgroundService
                 msg.AttemptCount++;
 
                 var result = await provider.SendAsync(req, ct);
+
+                success = result.Success;
+                retryable = result.Retryable;
+                providerMessageId = result.ProviderMessageId;
+                error = result.Error;
 
                 if (result.Success)
                 {
@@ -157,21 +185,45 @@ public sealed class EmailDispatcherWorker : BackgroundService
                 msg.NextAttemptAtUtc = DateTime.UtcNow.AddMinutes(5);
                 await db.SaveChangesAsync(ct);
 
+                success = false;
+                retryable = true;
+                error = ex.Message;
+
                 _logger.LogWarning(ex, "Email dispatch failed for {EmailId}", msg.Id);
             }
+            finally
+            {
+                var elapsedMs = (long)(DateTime.UtcNow - msgStartedAt).TotalMilliseconds;
+                _logger.LogInformation(
+                    "EmailDispatcher.ProcessMessage EXIT emailId={EmailId} success={Success} retryable={Retryable} providerMessageId={ProviderMessageId} error={Error} elapsedMs={ElapsedMs}",
+                    msg.Id,
+                    success,
+                    retryable,
+                    providerMessageId,
+                    error,
+                    elapsedMs);
+            }
         }
+
+        _logger.LogInformation(
+            "EmailDispatcher.DispatchBatch EXIT batchCount={BatchCount} providerMode={ProviderMode} elapsedMs={ElapsedMs}",
+            batchCount,
+            providerMode,
+            (long)(DateTime.UtcNow - startedAt).TotalMilliseconds);
     }
 
     private static IEmailProvider CreateProvider(IServiceProvider sp, BrevoOptions brevo)
     {
         if (string.Equals(brevo.Mode, "BREVO_SMTP", StringComparison.OrdinalIgnoreCase))
         {
-            return new SmtpEmailProvider(brevo);
+            var logger = sp.GetRequiredService<ILogger<SmtpEmailProvider>>();
+            return new SmtpEmailProvider(brevo, logger);
         }
 
         // Default: API
         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
         var http = httpClientFactory.CreateClient("BrevoApi");
-        return new BrevoApiEmailProvider(http, brevo);
+        var loggerApi = sp.GetRequiredService<ILogger<BrevoApiEmailProvider>>();
+        return new BrevoApiEmailProvider(http, brevo, loggerApi);
     }
 }

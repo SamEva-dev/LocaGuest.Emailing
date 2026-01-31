@@ -8,6 +8,7 @@ using LocaGuest.Emailing.Options;
 using LocaGuest.Emailing.Persistence;
 using LocaGuest.Emailing.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace LocaGuest.Emailing.Services;
@@ -16,11 +17,13 @@ internal sealed class EmailingService : IEmailingService
 {
     private readonly EmailingDbContext _db;
     private readonly BrevoOptions _brevo;
+    private readonly ILogger<EmailingService> _logger;
 
-    public EmailingService(EmailingDbContext db, IOptions<BrevoOptions> brevo)
+    public EmailingService(EmailingDbContext db, IOptions<BrevoOptions> brevo, ILogger<EmailingService> logger)
     {
         _db = db;
         _brevo = brevo.Value;
+        _logger = logger;
     }
 
     public async Task<Guid> QueueHtmlAsync(
@@ -32,8 +35,20 @@ internal sealed class EmailingService : IEmailingService
         EmailUseCaseTags tags,
         CancellationToken cancellationToken)
     {
-        var useCaseTags = TagCatalog.ResolveUseCaseTags(tags);
-        var contextTags = TagCatalog.ParseCsv(_brevo.ContextTagsCsv);
+        Guid? emailId = null;
+        string? failureReason = null;
+
+        _logger.LogInformation(
+            "EmailingService.QueueHtml ENTER to={ToEmail} subject={Subject} attachments={AttachmentsCount} tags={Tags}",
+            toEmail,
+            subject,
+            attachments?.Count ?? 0,
+            tags);
+
+        try
+        {
+            var useCaseTags = TagCatalog.ResolveUseCaseTags(tags);
+            var contextTags = TagCatalog.ParseCsv(_brevo.ContextTagsCsv);
 
         var entity = new EmailMessageEntity
         {
@@ -62,7 +77,23 @@ internal sealed class EmailingService : IEmailingService
 
         _db.EmailMessages.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
-        return entity.Id;
+            emailId = entity.Id;
+            return entity.Id;
+        }
+        catch (Exception ex)
+        {
+            failureReason = ex.Message;
+            throw;
+        }
+        finally
+        {
+            _logger.LogInformation(
+                "EmailingService.QueueHtml EXIT to={ToEmail} emailId={EmailId} success={Success} reason={Reason}",
+                toEmail,
+                emailId,
+                emailId.HasValue,
+                failureReason);
+        }
     }
 
     public async Task<Guid> QueueTemplateAsync(
@@ -73,8 +104,20 @@ internal sealed class EmailingService : IEmailingService
         EmailUseCaseTags tags,
         CancellationToken cancellationToken)
     {
-        var useCaseTags = TagCatalog.ResolveUseCaseTags(tags);
-        var contextTags = TagCatalog.ParseCsv(_brevo.ContextTagsCsv);
+        Guid? emailId = null;
+        string? failureReason = null;
+
+        _logger.LogInformation(
+            "EmailingService.QueueTemplate ENTER to={ToEmail} templateId={TemplateId} attachments={AttachmentsCount} tags={Tags}",
+            toEmail,
+            templateId,
+            attachments?.Count ?? 0,
+            tags);
+
+        try
+        {
+            var useCaseTags = TagCatalog.ResolveUseCaseTags(tags);
+            var contextTags = TagCatalog.ParseCsv(_brevo.ContextTagsCsv);
 
         var entity = new EmailMessageEntity
         {
@@ -103,6 +146,22 @@ internal sealed class EmailingService : IEmailingService
 
         _db.EmailMessages.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
-        return entity.Id;
+            emailId = entity.Id;
+            return entity.Id;
+        }
+        catch (Exception ex)
+        {
+            failureReason = ex.Message;
+            throw;
+        }
+        finally
+        {
+            _logger.LogInformation(
+                "EmailingService.QueueTemplate EXIT to={ToEmail} emailId={EmailId} success={Success} reason={Reason}",
+                toEmail,
+                emailId,
+                emailId.HasValue,
+                failureReason);
+        }
     }
 }
