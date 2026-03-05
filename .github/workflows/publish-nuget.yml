@@ -2,8 +2,15 @@ name: Publish NuGet (tag)
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  # ✅ Tu modifies juste ça manuellement quand tu veux publier une nouvelle version
+  PACKAGE_VERSION: "1.0.6"
+
+permissions:
+  contents: read
 
 jobs:
   publish:
@@ -23,10 +30,10 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          echo "Publishing version: ${VERSION}"
+          echo "Publishing version: $PACKAGE_VERSION"
           cp ./README.md ./src/LocaGuest.Emailing/README.md
           dotnet restore ./LocaGuest.Emailing.sln
-          dotnet pack ./src/LocaGuest.Emailing/LocaGuest.Emailing.csproj -c Release -o ./artifacts /p:PackageVersion="${VERSION}" /p:Version="${VERSION}"
+          dotnet pack ./src/LocaGuest.Emailing/LocaGuest.Emailing.csproj -c Release -o ./artifacts /p:PackageVersion=$PACKAGE_VERSION /p:Version=$PACKAGE_VERSION
 
       - name: Push to NuGet
         shell: bash
