@@ -410,7 +410,6 @@ FodyWeavers.xsd
 /src/LocaGuest.Api/Data/LocaGuest.db-wal
 /src/LocaGuest.Api/Data/LocaGuest_Audit.db
 *.pdf
-*.db-shm
-*.db-wal
 *.png
-*.md
+!README.md
+!**/README.md
