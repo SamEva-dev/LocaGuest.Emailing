@@ -1,6 +1,6 @@
 using System;
 
-namespace LocaGuest.Emailing.Internal;
+namespace Emailing.Internal;
 
 internal static class RetryPolicy
 {

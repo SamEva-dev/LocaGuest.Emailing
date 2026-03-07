@@ -1,6 +1,6 @@
 using System;
 
-namespace LocaGuest.Emailing.Abstractions;
+namespace Emailing.Abstractions;
 
 /// <summary>
 /// Level-2 tags: use-case tags passed by the caller.

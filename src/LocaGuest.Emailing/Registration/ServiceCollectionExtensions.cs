@@ -1,14 +1,14 @@
 using System;
-using LocaGuest.Emailing.Abstractions;
-using LocaGuest.Emailing.Options;
-using LocaGuest.Emailing.Persistence;
-using LocaGuest.Emailing.Services;
+using Emailing.Abstractions;
+using Emailing.Options;
+using Emailing.Persistence;
+using Emailing.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace LocaGuest.Emailing.Registration;
+namespace Emailing.Registration;
 
 public static class ServiceCollectionExtensions
 {
@@ -16,7 +16,7 @@ public static class ServiceCollectionExtensions
     /// Register LocaGuest.Emailing services + EF Core DbContext.
     /// The host can choose the database provider via the builder callback (recommended).
     /// </summary>
-    public static IServiceCollection AddLocaGuestEmailing(
+    public static IServiceCollection AddEmailing(
         this IServiceCollection services,
         IConfiguration configuration,
         Action<EmailingDbContextBuilder> db)

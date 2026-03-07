@@ -1,7 +1,7 @@
 using System;
-using LocaGuest.Emailing.Abstractions;
+using Emailing.Abstractions;
 
-namespace LocaGuest.Emailing.Persistence.Entities;
+namespace Emailing.Persistence.Entities;
 
 public sealed class EmailMessageEntity
 {

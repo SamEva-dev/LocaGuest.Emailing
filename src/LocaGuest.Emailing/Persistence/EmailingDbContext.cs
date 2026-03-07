@@ -1,7 +1,7 @@
-using LocaGuest.Emailing.Persistence.Entities;
+using Emailing.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace LocaGuest.Emailing.Persistence;
+namespace Emailing.Persistence;
 
 public sealed class EmailingDbContext : DbContext
 {

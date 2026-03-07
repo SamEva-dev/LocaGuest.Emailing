@@ -1,4 +1,4 @@
-namespace LocaGuest.Emailing.Abstractions;
+namespace Emailing.Abstractions;
 
 public sealed class EmailAttachment
 {

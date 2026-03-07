@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LocaGuest.Emailing.Persistence.Migrations.Emailing
+namespace Emailing.Persistence.Migrations.Emailing
 {
     /// <inheritdoc />
     public partial class InitEmailing : Migration
