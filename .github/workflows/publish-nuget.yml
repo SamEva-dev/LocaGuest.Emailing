@@ -7,7 +7,7 @@ on:
 
 env:
   # ✅ Tu modifies juste ça manuellement quand tu veux publier une nouvelle version
-  PACKAGE_VERSION: "2.0.0"
+  PACKAGE_VERSION: "2.0.1"
 
 permissions:
   contents: read
