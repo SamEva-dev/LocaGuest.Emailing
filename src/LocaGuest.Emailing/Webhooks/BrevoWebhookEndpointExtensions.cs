@@ -5,10 +5,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Emailing.Abstractions;
-using Emailing.Options;
-using Emailing.Persistence;
-using Emailing.Persistence.Entities;
+using LocaGuest.Emailing.Abstractions;
+using LocaGuest.Emailing.Options;
+using LocaGuest.Emailing.Persistence;
+using LocaGuest.Emailing.Persistence.Entities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Emailing.Webhooks;
+namespace LocaGuest.Emailing.Webhooks;
 
 public static class BrevoWebhookEndpointExtensions
 {

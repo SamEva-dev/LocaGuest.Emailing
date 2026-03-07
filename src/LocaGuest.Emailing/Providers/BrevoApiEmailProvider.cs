@@ -6,14 +6,14 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Emailing.Options;
-using Emailing.Providers.Models;
-using Emailing.Internal;
+using LocaGuest.Emailing.Options;
+using LocaGuest.Emailing.Providers.Models;
+using LocaGuest.Emailing.Internal;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace Emailing.Providers;
+namespace LocaGuest.Emailing.Providers;
 
 internal sealed class BrevoApiEmailProvider : IEmailProvider
 {

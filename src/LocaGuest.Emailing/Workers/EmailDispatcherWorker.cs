@@ -3,19 +3,19 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Emailing.Abstractions;
-using Emailing.Internal;
-using Emailing.Options;
-using Emailing.Persistence;
-using Emailing.Providers;
-using Emailing.Providers.Models;
+using LocaGuest.Emailing.Abstractions;
+using LocaGuest.Emailing.Internal;
+using LocaGuest.Emailing.Options;
+using LocaGuest.Emailing.Persistence;
+using LocaGuest.Emailing.Providers;
+using LocaGuest.Emailing.Providers.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Emailing.Workers;
+namespace LocaGuest.Emailing.Workers;
 
 /// <summary>
 /// Background worker that dispatches queued emails using configured Brevo provider (API or SMTP).

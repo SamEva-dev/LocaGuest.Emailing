@@ -2,7 +2,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Emailing.Persistence;
+namespace LocaGuest.Emailing.Persistence;
 
 public sealed class EmailingDesignTimeDbContextFactory : IDesignTimeDbContextFactory<EmailingDbContext>
 {

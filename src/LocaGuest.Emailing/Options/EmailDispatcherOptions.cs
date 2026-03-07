@@ -1,4 +1,4 @@
-namespace Emailing.Options;
+namespace LocaGuest.Emailing.Options;
 
 public sealed class EmailDispatcherOptions
 {

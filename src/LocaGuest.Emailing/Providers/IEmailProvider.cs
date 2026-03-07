@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Emailing.Providers.Models;
+using LocaGuest.Emailing.Providers.Models;
 
-namespace Emailing.Providers;
+namespace LocaGuest.Emailing.Providers;
 
 internal interface IEmailProvider
 {

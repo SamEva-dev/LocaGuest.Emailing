@@ -1,6 +1,6 @@
 using System;
 
-namespace Emailing.Persistence.Entities;
+namespace LocaGuest.Emailing.Persistence.Entities;
 
 public sealed class EmailAttachmentEntity
 {

@@ -1,2 +1,2 @@
-# Emailing
+# LocaGuest.Emailing
 gestion des email

@@ -1,4 +1,4 @@
-# Emailing
+# LocaGuest.Emailing
 
 A reusable .NET 9 library for **transactional email delivery** with:
 
@@ -12,7 +12,7 @@ A reusable .NET 9 library for **transactional email delivery** with:
 ## Quick install
 
 ```bash
-dotnet add package Emailing
+dotnet add package LocaGuest.Emailing
 ```
 
 ## Configuration (appsettings.json)

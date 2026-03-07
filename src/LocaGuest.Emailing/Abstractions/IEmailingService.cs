@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Emailing.Abstractions;
+namespace LocaGuest.Emailing.Abstractions;
 
 /// <summary>
 /// Public entry point for your services to queue emails with use-case tags.

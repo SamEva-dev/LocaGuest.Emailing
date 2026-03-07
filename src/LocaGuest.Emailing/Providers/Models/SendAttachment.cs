@@ -1,4 +1,4 @@
-namespace Emailing.Providers.Models;
+namespace LocaGuest.Emailing.Providers.Models;
 
 internal sealed class SendAttachment
 {
